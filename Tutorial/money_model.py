@@ -1,8 +1,16 @@
 from mesa import Agent, Model
 from mesa.time import RandomActivation
-import matplotlib.pyplot as plt
 from mesa.space import MultiGrid
+from mesa.datacollection import DataCollector
+import matplotlib.pyplot as plt
 import numpy as np
+
+def compute_gini(model):
+    agent_wealths = [agent.wealth for agent in model.schedule.agents]
+    x = sorted(agent_wealths)
+    N = model.num_agents
+    B = sum( xi * (N-i) for i,xi in enumerate(x) ) / (N*sum(x))
+    return (1 + (1/N) - 2*B)
 
 class MoneyAgent(Agent):
     """ An agent with fixed initial wealth."""
@@ -48,20 +56,29 @@ class MoneyModel(Model):
             y = self.random.randrange(self.grid.height)
             self.grid.place_agent(a, (x, y))
 
+        self.datacollector = DataCollector(
+            model_reporters={"Gini": compute_gini},
+            agent_reporters={"Wealth": "wealth"})
+
     def step(self):
+        self.datacollector.collect(self)
         self.schedule.step()
 
 model = MoneyModel(50, 10, 10)
-for i in range(20):
+for i in range(100):
     model.step()
 
-agent_counts = np.zeros((model.grid.width, model.grid.height))
-for cell in model.grid.coord_iter():
-    cell_content, x, y = cell
-    agent_count = len(cell_content)
-    agent_counts[x][y] = agent_count
-plt.imshow(agent_counts, interpolation='nearest')
-plt.colorbar()
+gini = model.datacollector.get_model_vars_dataframe()
+gini.plot()
+plt.show()
 
-# If running from a text editor or IDE, remember you'll need the following:
+agent_wealth = model.datacollector.get_agent_vars_dataframe()
+print(agent_wealth.head())
+
+end_wealth = agent_wealth.xs(99, level="Step")["Wealth"]
+end_wealth.hist(bins=range(agent_wealth.Wealth.max()+1))
+plt.show()
+
+one_agent_wealth = agent_wealth.xs(14, level="AgentID")
+one_agent_wealth.Wealth.plot()
 plt.show()
