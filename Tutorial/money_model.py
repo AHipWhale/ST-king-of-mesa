@@ -23,7 +23,6 @@ class MoneyAgent(Agent):
         self.move()
         if self.wealth > 0:
             self.give_money()
-        # print("Hi, I am agent " + str(self.unique_id) +" and my wealth is: "+ str(self.wealth)+".")
 
     def move(self):
         possible_steps = self.model.grid.get_neighborhood(
@@ -36,9 +35,15 @@ class MoneyAgent(Agent):
     def give_money(self):
         cellmates = self.model.grid.get_cell_list_contents([self.pos])
         if len(cellmates) > 1:
-            other = self.random.choice(cellmates)
-            other.wealth += 1
-            self.wealth -= 1
+            if self.wealth >= len(cellmates):
+                for cellmate in cellmates:
+                    cellmate.wealth += 1
+                    self.wealth -= 1
+
+            else:
+                other = self.random.choice(cellmates)
+                other.wealth += 1
+                self.wealth -= 1
 
 class MoneyModel(Model):
     """A model with some number of agents."""
@@ -75,7 +80,7 @@ gini.plot()
 plt.show()
 
 agent_wealth = model.datacollector.get_agent_vars_dataframe()
-print(agent_wealth.head())
+# print(agent_wealth.head())
 
 end_wealth = agent_wealth.xs(99, level="Step")["Wealth"]
 end_wealth.hist(bins=range(agent_wealth.Wealth.max()+1))
