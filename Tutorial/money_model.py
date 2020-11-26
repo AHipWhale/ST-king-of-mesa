@@ -35,12 +35,15 @@ class MoneyAgent(Agent):
     def give_money(self):
         cellmates = self.model.grid.get_cell_list_contents([self.pos])
         if len(cellmates) > 1:
+            # heeft de agent meer 'wealth' dan het aantal cellmates
             if self.wealth >= len(cellmates):
+                # elke cellmate krijgt één 'wealth'
                 for cellmate in cellmates:
                     cellmate.wealth += 1
                     self.wealth -= 1
 
             else:
+                # geeft een random agent één 'wealth'
                 other = self.random.choice(cellmates)
                 other.wealth += 1
                 self.wealth -= 1
